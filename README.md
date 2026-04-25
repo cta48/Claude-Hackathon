@@ -22,7 +22,7 @@ The goal is to expand access to structured thinking — the kind of perspective-
 
 ## Demo
 
-👉 **[Live App](https://YOUR_USERNAME.github.io/YOUR_REPO_NAME)**
+👉 **[Live App](https://cta48.github.io/Claude-Hackathon/)**
 
 ---
 
