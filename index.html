@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Decision Clarity — Think Through Any Decision</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff; --bg-secondary: #f5f5f3; --text: #1a1a1a;
+      --text-muted: #6b6b6b; --text-faint: #aaa;
+      --border: rgba(0,0,0,0.12); --border-hover: rgba(0,0,0,0.25);
+      --radius-md: 8px; --radius-lg: 12px;
+      --green-bg: #EAF3DE; --green-text: #3B6D11;
+      --blue-bg: #E6F1FB; --blue-text: #185FA5;
+      --red-bg: #FCEBEB; --red-text: #A32D2D;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a; --bg-secondary: #242424; --text: #f0f0f0;
+        --text-muted: #aaa; --text-faint: #666;
+        --border: rgba(255,255,255,0.12); --border-hover: rgba(255,255,255,0.25);
+        --green-bg: #173404; --green-text: #97C459;
+        --blue-bg: #042C53; --blue-text: #85B7EB;
+        --red-bg: #501313; --red-text: #F09595;
+      }
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem; }
+    .container { max-width: 720px; margin: 0 auto; }
+    header { margin-bottom: 2rem; text-align: center; }
+    header h1 { font-size: 28px; font-weight: 600; margin-bottom: 6px; }
+    header p { font-size: 16px; color: var(--text-muted); }
+    .badge { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--green-bg); color: var(--green-text); margin-bottom: 12px; font-weight: 500; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; justify-content: center; }
+    .chip { font-size: 13px; padding: 5px 12px; border: 0.5px solid var(--border); border-radius: 20px; background: transparent; color: var(--text-muted); cursor: pointer; font-family: inherit; transition: background 0.15s; }
+    .chip:hover { background: var(--bg-secondary); border-color: var(--border-hover); }
+    .input-row { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+    textarea { flex: 1; padding: 12px 14px; font-size: 15px; font-family: inherit; border: 0.5px solid var(--border-hover); border-radius: var(--radius-md); background: var(--bg); color: var(--text); resize: none; height: 80px; line-height: 1.5; }
+    textarea:focus { outline: none; border-color: #888; }
+    textarea::placeholder { color: var(--text-faint); }
+    button.primary { padding: 0 20px; font-size: 14px; font-family: inherit; border: 0.5px solid var(--border-hover); border-radius: var(--radius-md); background: transparent; color: var(--text); cursor: pointer; align-self: flex-end; height: 44px; white-space: nowrap; transition: background 0.15s, transform 0.1s; }
+    button.primary:hover { background: var(--bg-secondary); }
+    button.primary:active { transform: scale(0.97); }
+    button.primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+    @media (max-width: 560px) { .cards { grid-template-columns: 1fr; } }
+    .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; min-height: 160px; }
+    .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .card-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .card-label { font-size: 13px; font-weight: 500; }
+    .card.best .card-icon { background: var(--green-bg); } .card.best .card-label { color: var(--green-text); }
+    .card.likely .card-icon { background: var(--blue-bg); } .card.likely .card-label { color: var(--blue-text); }
+    .card.worst .card-icon { background: var(--red-bg); } .card.worst .card-label { color: var(--red-text); }
+    .card-body { font-size: 14px; color: var(--text-muted); line-height: 1.65; }
+    .card-body.loading { color: var(--text-faint); font-style: italic; }
+    .empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--text-faint); font-size: 14px; grid-column: 1/-1; border: 0.5px dashed var(--border); border-radius: var(--radius-lg); }
+    .followup { display: none; margin-top: 0.5rem; }
+    .followup p { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+    .followup-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .follow-btn { font-size: 13px; padding: 6px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-md); background: transparent; color: var(--text-muted); cursor: pointer; font-family: inherit; transition: background 0.15s; }
+    .follow-btn:hover { background: var(--bg-secondary); }
+    .thinking { display: none; align-items: center; gap: 8px; font-size: 13px; color: var(--text-faint); margin-bottom: 1rem; }
+    .thinking.show { display: flex; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-faint); animation: pulse 1.2s infinite; }
+    .dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes pulse { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+    footer { text-align: center; margin-top: 3rem; font-size: 12px; color: var(--text-faint); }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="badge">Mental Health &amp; Decision Support</div>
+    <h1>Decision Clarity</h1>
+    <p>Describe any decision. Get three honest perspectives.</p>
+  </header>
+
+  <div class="chips">
+    <button class="chip" onclick="setQ('Should I quit my job to start a business?')">Quit job for startup</button>
+    <button class="chip" onclick="setQ('Should I move to a new city for a relationship?')">Move for a relationship</button>
+    <button class="chip" onclick="setQ('Should I go back to school for a graduate degree?')">Go back to school</button>
+    <button class="chip" onclick="setQ('Should I lend my friend a large sum of money?')">Lend money to a friend</button>
+  </div>
+
+  <div class="input-row">
+    <textarea id="q" placeholder="Describe your decision... e.g. Should I accept a job offer that pays more but requires relocating?"></textarea>
+    <button class="primary" id="go" onclick="analyze()">Analyze ↗</button>
+  </div>
+
+  <div class="thinking" id="thinking">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <span>Thinking through your decision...</span>
+  </div>
+
+  <div class="cards" id="cards">
+    <div class="empty-state">Your analysis will appear here once you describe a decision above.</div>
+  </div>
+
+  <div class="followup" id="followup">
+    <p>Dig deeper:</p>
+    <div class="followup-btns" id="followup-btns"></div>
+  </div>
+
+  <footer>Built with AI &middot; Hackathon 2026</footer>
+</div>
+
+<script>
+const RESPONSES = {
+  "quit my job": {
+    best: "Your business takes off within the first year, you build a product people love and generate enough revenue to pay yourself. You gain full autonomy over your time and feel energized by work you truly own.",
+    likely: "The first 6–18 months are a grind — income is inconsistent, growth is slower than expected, and you'll wear every hat. Most founders who succeed do so after multiple pivots and a lot of uncomfortable learning.",
+    worst: "The business fails to find customers within your runway, savings run out, and you find yourself re-entering the job market with a gap on your resume during a competitive hiring period.",
+    followups: ["What's my financial runway if I quit today?", "Have I validated this idea with real paying customers?", "What's my backup plan if this doesn't work in 12 months?"]
+  },
+  "move to a new city": {
+    best: "The relationship deepens in a shared environment, you build a new social circle, and new career opportunities open up. The move feels like the start of a genuinely exciting chapter of your life.",
+    likely: "The transition is harder than expected — you miss your existing support network, the relationship faces new pressures from the adjustment period, and building a new life takes 1–2 years of real effort.",
+    worst: "The relationship ends after the move, leaving you in an unfamiliar city without your established friendships, career network, or family proximity — rebuilding everything from scratch.",
+    followups: ["Is the relationship strong enough to survive transition stress?", "What does my career situation look like in the new city?", "Do I have any existing connections or community there?"]
+  },
+  "go back to school": {
+    best: "The degree opens a career path that was previously closed to you. You build a valuable network and the credential pays for itself within a few years through higher earning potential and job satisfaction.",
+    likely: "The degree takes more time and money than anticipated. The career shift you hoped for happens, but slowly — most people see meaningful ROI 3–5 years after graduating, not immediately.",
+    worst: "You accumulate significant debt, the degree doesn't differentiate you the way you hoped, and you re-enter the workforce at the same level but with less savings and more financial pressure.",
+    followups: ["What's the average salary bump for this specific degree?", "Could I get the same skills through a cheaper path?", "What does my debt-to-income ratio look like after graduation?"]
+  },
+  "lend my friend": {
+    best: "Your friend gets back on their feet, repays you on time, and the experience deepens the trust between you — they know you showed up when it mattered.",
+    likely: "Repayment takes longer than agreed, and you spend months in an awkward dynamic where you don't want to ask but they feel guilty. The money comes back eventually, but the friendship feels strained.",
+    worst: "The money is never repaid, and rather than facing you about it your friend drifts away. You lose both the money and the friendship.",
+    followups: ["Can I afford to lose this money entirely and still be okay?", "Has this friend ever repaid borrowed money before?", "Would a smaller amount help them without putting me at risk?"]
+  },
+  "accept a job": {
+    best: "The new role accelerates your career, expands your skills, and the higher pay gives you financial breathing room. Within a year, the move looks obviously correct in hindsight.",
+    likely: "There's a real adjustment period — new culture, new expectations, and relocation stress if involved. The pay bump is real but so are the hidden costs. Things stabilize after 6 months.",
+    worst: "The role turns out to be misrepresented, the culture is a poor fit, or the relocation disrupts your personal life more than you anticipated. Leaving within a year is possible but costly.",
+    followups: ["Have I talked to current or former employees at this company?", "What does my gut say beyond the money?", "What would I have to give up that I'd genuinely miss?"]
+  },
+  "stay": {
+    best: "Staying brings stability, deepened expertise, and the slow compounding of relationships and trust that can't be rebuilt quickly elsewhere. You eventually find renewed meaning in your current path.",
+    likely: "Nothing dramatic changes — the pros and cons you're weighing today are likely to persist. Staying is often the right call, but it's worth being honest about whether you're staying from choice or from fear.",
+    worst: "You stay out of inertia, the things frustrating you don't improve, and in 2 years you're having the same internal debate but with more regret about time passed.",
+    followups: ["Am I staying because I want to, or because change feels scary?", "What would need to change for me to feel genuinely satisfied here?", "What's the cost of waiting another 6 months to decide?"]
+  }
+};
+
+const DEFAULT_RESPONSES = [
+  {
+    best: "Things go better than expected — the decision pays off, you gain confidence, and it opens doors to opportunities you couldn't have anticipated beforehand.",
+    likely: "The outcome is mixed. Some things work out, others require adjustment. Progress is real but slower and messier than the optimistic version you imagined going in.",
+    worst: "The decision backfires — the downside materializes and you're left managing consequences that are costly in time, money, or relationships.",
+    followups: ["What would I regret more — doing this or not doing it?", "What's the minimum version of this I could try first?", "Who has done something similar that I could talk to?"]
+  },
+  {
+    best: "This choice aligns with your values and long-term goals. With effort and a bit of luck, it leads to meaningful growth and a situation you're genuinely proud of.",
+    likely: "There's a real path to success here, but it requires more patience and resilience than it looks like from the outside. Most people underestimate how hard the middle part is.",
+    worst: "The risks compound in an unlucky way — what seemed manageable becomes overwhelming, and the cost is higher than you prepared for.",
+    followups: ["What's the one thing most likely to make this fail?", "Am I making this from fear or from intention?", "What would a trusted mentor who knows me well say?"]
+  },
+  {
+    best: "You make the leap, things click into place, and in two years you look back at this moment as one of the best decisions you ever made.",
+    likely: "It's harder than you think but worth it in the end. Expect a bumpy middle period where you question the decision — that's normal, not a sign you were wrong.",
+    worst: "The downside scenario plays out, leaving you in a harder position — financially, emotionally, or both. Recovery is absolutely possible but takes real time.",
+    followups: ["Have I talked to someone who faced this exact decision?", "What information would make me feel more confident?", "If I imagine telling someone about this in 5 years, how does it feel?"]
+  }
+];
+
+let defaultIndex = 0;
+
+function setQ(text) {
+  document.getElementById('q').value = text;
+  document.getElementById('q').focus();
+}
+
+function getResponse(q) {
+  const lower = q.toLowerCase();
+  for (const key of Object.keys(RESPONSES)) {
+    if (lower.includes(key)) return RESPONSES[key];
+  }
+  const r = DEFAULT_RESPONSES[defaultIndex % DEFAULT_RESPONSES.length];
+  defaultIndex++;
+  return r;
+}
+
+function analyze() {
+  const q = document.getElementById('q').value.trim();
+  if (!q) return;
+
+  const btn = document.getElementById('go');
+  btn.disabled = true;
+  btn.textContent = 'Thinking...';
+  document.getElementById('thinking').classList.add('show');
+  document.getElementById('followup').style.display = 'none';
+
+  const cards = document.getElementById('cards');
+  cards.innerHTML = `
+    <div class="card best"><div class="card-header"><div class="card-icon">👍</div><span class="card-label">Best case</span></div><div class="card-body loading">Analyzing...</div></div>
+    <div class="card likely"><div class="card-header"><div class="card-icon">⚖️</div><span class="card-label">Likely outcome</span></div><div class="card-body loading">Analyzing...</div></div>
+    <div class="card worst"><div class="card-header"><div class="card-icon">💥</div><span class="card-label">Worst case</span></div><div class="card-body loading">Analyzing...</div></div>
+  `;
+
+  setTimeout(() => {
+    const r = getResponse(q);
+    cards.innerHTML = `
+      <div class="card best">
+        <div class="card-header"><div class="card-icon">👍</div><span class="card-label">Best case</span></div>
+        <div class="card-body">${r.best}</div>
+      </div>
+      <div class="card likely">
+        <div class="card-header"><div class="card-icon">⚖️</div><span class="card-label">Likely outcome</span></div>
+        <div class="card-body">${r.likely}</div>
+      </div>
+      <div class="card worst">
+        <div class="card-header"><div class="card-icon">💥</div><span class="card-label">Worst case</span></div>
+        <div class="card-body">${r.worst}</div>
+      </div>
+    `;
+
+    const fub = document.getElementById('followup-btns');
+    fub.innerHTML = r.followups.map(f =>
+      `<button class="follow-btn" onclick="setQ('${f.replace(/'/g, "\\'")}')">${f}</button>`
+    ).join('');
+    document.getElementById('followup').style.display = 'block';
+    document.getElementById('thinking').classList.remove('show');
+    btn.disabled = false;
+    btn.textContent = 'Analyze ↗';
+  }, 1800);
+}
+
+document.getElementById('q').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); analyze(); }
+});
+</script>
+</body>
+</html>
